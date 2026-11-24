@@ -10,7 +10,7 @@ public import SpherePacking.MagicFunction.b.Schwartz
 /-!
 # Double zeroes of `b`
 
-For `r > 2`, `b(r) = -4i sin(π r / 2)² ∫₀^∞ ψ_I(it) e^{-π r t} dt`, where `r` is the squared
+For `s > 2`, `b(s) = -4i sin(π s / 2)² ∫₀^∞ ψ_I(it) e^{-π s t} dt`, where `s` is the squared
 radius `‖x‖²`.
 -/
 
@@ -20,13 +20,13 @@ open Set MeasureTheory Real Complex
 
 namespace MagicFunction
 
-theorem integrableOn_ψI'_mul_cexp {r : ℝ} (hr : 2 < r) :
-    IntegrableOn (fun t : ℝ ↦ ψI' (I * t) * cexp (-π * r * t)) (Ioi 0) := by
+theorem integrableOn_ψI'_mul_cexp {s : ℝ} (hr : 2 < s) :
+    IntegrableOn (fun t : ℝ ↦ ψI' (I * t) * cexp (-π * s * t)) (Ioi 0) := by
   sorry
 
-theorem b'_eq_neg_four_mul_I_mul_sin_sq_mul_integral {r : ℝ} (hr : 2 < r) :
-    b.RealIntegrals.b' r = -4 * I * (Real.sin (π * r / 2) : ℂ) ^ 2 *
-      ∫ t in Ioi (0 : ℝ), ψI' (I * t) * cexp (-π * r * t) := by
+theorem b'_eq_neg_four_mul_I_mul_sin_sq_mul_integral {s : ℝ} (hr : 2 < s) :
+    b.RealIntegrals.b' s = -4 * I * (Real.sin (π * s / 2) : ℂ) ^ 2 *
+      ∫ t in Ioi (0 : ℝ), ψI' (I * t) * cexp (-π * s * t) := by
   sorry
 
 theorem b_eq_neg_four_mul_I_mul_sin_sq_mul_integral {x : EuclideanSpace ℝ (Fin 8)} (hx : √2 < ‖x‖) :
