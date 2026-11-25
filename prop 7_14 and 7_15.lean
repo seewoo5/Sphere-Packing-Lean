@@ -1,103 +1,75 @@
-import Mathlib
+
+module
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
+public import SpherePacking.MagicFunction.a.Schwartz
+
+@[expose] public section
 
 noncomputable section
 
-open MeasureTheory
-open scoped Interval
+open Set MeasureTheory Real Complex
 
-namespace Proposition714
-
-def phi0H (z : UpperHalfPlane) : ℂ :=
-  (EisensteinSeries.E2 z *
-      (ModularForm.E₄ : UpperHalfPlane → ℂ) z -
-    (ModularForm.E₆ : UpperHalfPlane → ℂ) z) ^ 2 /
-      ModularForm.discriminant z
-
-def phi0 (z : ℂ) : ℂ :=
-  if hz : 0 < z.im then phi0H ⟨z, hz⟩ else 0
-
-def segmentIntegral (f : ℂ → ℂ) (p q : ℂ) : ℂ :=
-  ∫ t : ℝ in (0 : ℝ)..1,
-    f (p + (t : ℂ) * (q - p)) * (q - p)
-
-def verticalRayIntegral (f : ℂ → ℂ) (y : ℝ) : ℂ :=
-  ∫ t : ℝ in Set.Ioi y,
-    f (Complex.I * (t : ℂ)) * Complex.I
-
-def gaussian (s : ℝ) (z : ℂ) : ℂ :=
-  Complex.exp ((Real.pi : ℂ) * Complex.I * (s : ℂ) * z)
-
-def inversionKernel (z : ℂ) : ℂ :=
-  phi0 (-1 / z) * z ^ 2
-
-def aRad (s : ℝ) : ℂ :=
-  let left : ℂ → ℂ :=
-    fun z => inversionKernel (z + 1) * gaussian s z
-  let right : ℂ → ℂ :=
-    fun z => inversionKernel (z - 1) * gaussian s z
-  let middle : ℂ → ℂ :=
-    fun z => inversionKernel z * gaussian s z
-  segmentIntegral left (-1) (-1 + Complex.I) +
-    segmentIntegral left (-1 + Complex.I) Complex.I +
-    segmentIntegral right 1 (1 + Complex.I) +
-    segmentIntegral right (1 + Complex.I) Complex.I -
-    2 * segmentIntegral middle 0 Complex.I +
-    2 * verticalRayIntegral
-      (fun z => phi0 z * gaussian s z) 1
+namespace MagicFunction.a.AnalyticContinuation
 
 def laplaceIntegrand (r t : ℝ) : ℂ :=
-  phi0 (Complex.I / (t : ℂ)) * (t : ℂ) ^ 2 *
-    (Real.exp (-Real.pi * r ^ 2 * t) : ℂ)
+  φ₀'' (I / (t : ℂ)) * (t : ℂ) ^ 2 *
+    cexp ((-π * r * t : ℝ) : ℂ)
 
 
-theorem Proposition7_14_laplace :
-    ∀ r : ℝ, Real.sqrt 2 < r →
-      IntegrableOn
-        (laplaceIntegrand r)
-        (Set.Ioi (0 : ℝ)) ∧
-      aRad (r ^ 2) =
-        4 * Complex.I *
-          (Real.sin (Real.pi * r ^ 2 / 2) : ℂ) ^ 2 *
-          (∫ t : ℝ in Set.Ioi (0 : ℝ),
-            laplaceIntegrand r t) := by
+theorem integrableOn_φ₀''_mul_sq_mul_cexp {r : ℝ} (hr : 2 < r) :
+    IntegrableOn (laplaceIntegrand r) (Ioi (0 : ℝ)) := by
   sorry
 
-end Proposition714
 
-end
+theorem a'_eq_four_mul_I_mul_sin_sq_mul_integral {r : ℝ} (hr : 2 < r) :
+    MagicFunction.a.RealIntegrals.a' r =
+      4 * I * (Real.sin (π * r / 2) : ℂ) ^ 2 *
+        (∫ t : ℝ in Ioi (0 : ℝ), laplaceIntegrand r t) := by
+  sorry
 
-noncomputable section
 
-open MeasureTheory
+theorem a_eq_four_mul_I_mul_sin_sq_mul_integral
+    {x : EuclideanSpace ℝ (Fin 8)} (hx : √2 < ‖x‖) :
+    MagicFunction.FourierEigenfunctions.a x =
+      4 * I * (Real.sin (π * ‖x‖ ^ 2 / 2) : ℂ) ^ 2 *
+        (∫ t : ℝ in Ioi (0 : ℝ), laplaceIntegrand (‖x‖ ^ 2) t) := by
+  rw [MagicFunction.FourierEigenfunctions.a_apply]
+  exact a'_eq_four_mul_I_mul_sin_sq_mul_integral
+    (Real.lt_sq_of_sqrt_lt hx)
 
-namespace Proposition715
 
 def regularizedIntegrand (r t : ℝ) : ℂ :=
-  Proposition714.laplaceIntegrand r t -
-    Complex.ofReal
-      (36 / Real.pi ^ 2 * Real.exp (2 * Real.pi * t)
-        - 8640 / Real.pi * t + 18144 / Real.pi ^ 2) *
-      Complex.ofReal (Real.exp (-Real.pi * r ^ 2 * t))
+  laplaceIntegrand r t -
+    ((36 / π ^ 2 * Real.exp (2 * π * t) -
+        8640 / π * t + 18144 / π ^ 2 : ℝ) : ℂ) *
+      cexp ((-π * r * t : ℝ) : ℂ)
 
 
 def regularizedRHS (r : ℝ) : ℂ :=
-  let s : ℝ := r ^ 2
-  let x : ℝ := Real.pi * s / 2
-  let y : ℝ := x - Real.pi
-  (Complex.I / (Real.pi : ℂ)) *
-      Complex.ofReal
-        (36 * (s - 2) * (Real.sinc y) ^ 2
-          + (18144 * s - 8640) * (Real.sinc x) ^ 2)
-    + (4 : ℂ) * Complex.I * (Real.sin x : ℂ) ^ 2 *
-        (∫ t : ℝ in Set.Ioi (0 : ℝ),
-          regularizedIntegrand r t)
+  let u : ℝ := π * r / 2
+  (I / (π : ℂ)) *
+      ((36 * (r - 2) * (Real.sinc (u - π)) ^ 2 +
+          (18144 * r - 8640) * (Real.sinc u) ^ 2 : ℝ) : ℂ) +
+    4 * I * (Real.sin u : ℂ) ^ 2 *
+      (∫ t : ℝ in Ioi (0 : ℝ), regularizedIntegrand r t)
 
 
-theorem Proposition7_15 :
-  ∀ r : ℝ, 0 ≤ r →
-    IntegrableOn (regularizedIntegrand r) (Set.Ioi (0 : ℝ)) ∧
-    Proposition714.aRad (r ^ 2) = regularizedRHS r := by sorry
+theorem integrableOn_regularizedIntegrand {r : ℝ} (hr : 0 ≤ r) :
+    IntegrableOn (regularizedIntegrand r) (Ioi (0 : ℝ)) := by
+  sorry
 
-end Proposition715
+
+theorem a'_eq_regularizedRHS {r : ℝ} (hr : 0 ≤ r) :
+    MagicFunction.a.RealIntegrals.a' r = regularizedRHS r := by
+  sorry
+
+
+theorem a_eq_regularizedRHS (x : EuclideanSpace ℝ (Fin 8)) :
+    MagicFunction.FourierEigenfunctions.a x = regularizedRHS (‖x‖ ^ 2) := by
+  rw [MagicFunction.FourierEigenfunctions.a_apply]
+  exact a'_eq_regularizedRHS (sq_nonneg ‖x‖)
+
+end MagicFunction.a.AnalyticContinuation
 
 end
+
