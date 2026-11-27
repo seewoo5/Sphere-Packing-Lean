@@ -48,6 +48,7 @@ public import SpherePacking.MagicFunction.b.AnalyticContinuation
 public import SpherePacking.MagicFunction.b.Basic
 public import SpherePacking.MagicFunction.b.Defs
 public import SpherePacking.MagicFunction.b.Eigenfunction
+public import SpherePacking.MagicFunction.b.Laplace
 public import SpherePacking.MagicFunction.b.Psi
 public import SpherePacking.MagicFunction.b.Schwartz
 public import SpherePacking.MagicFunction.b.SpecialValues

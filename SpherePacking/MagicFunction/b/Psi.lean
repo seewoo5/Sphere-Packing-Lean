@@ -9,6 +9,8 @@ public import SpherePacking.MagicFunction.IntegralParametrisations
 public import SpherePacking.ModularForms.FG
 
 import SpherePacking.ForMathlib.SlashActions
+import SpherePacking.ForMathlib.AtImInfty
+import SpherePacking.ModularForms.JacobiTheta.MDifferentiable
 import SpherePacking.ModularForms.Delta
 import SpherePacking.ModularForms.JacobiTheta.Basic
 import SpherePacking.ModularForms.JacobiTheta.JacobiIdentity
@@ -23,7 +25,8 @@ Jacobi theta functions and are used in the definition of the -1-eigenfunction `b
 @[expose] public section
 
 open UpperHalfPlane hiding I
-open Complex Real Matrix ModularGroup ModularForm SlashAction MatrixGroups
+open Filter Complex Real Matrix ModularGroup ModularForm SlashAction MatrixGroups
+open scoped Manifold
 
 noncomputable section defs
 
@@ -101,6 +104,98 @@ theorem ψS_eq_neg_one_half_smul_G_div_disc : ψS = (-1 / 2 : ℂ) • G / Δ :=
     Pi.smul_apply, smul_eq_mul, hJ, hΔ]
   field
 
+/-- The identity that combines the vertical tails in Proposition 7.40. -/
+lemma ψT_add_ψS : ψT + ψS = ψI := by
+  rw [ψT_eq, ψS_eq, ψI_eq]
+  ext z
+  simp only [Pi.add_apply, Pi.sub_apply, Pi.mul_apply, Pi.div_apply, Pi.pow_apply,
+    Pi.ofNat_apply, Pi.smul_apply, nsmul_eq_mul]
+  ring
+
+/-- The normalized discriminant tends to one at the cusp. -/
+private lemma normalized_discriminant_tendsto :
+    Filter.Tendsto (fun z : ℍ ↦ Δ z / cexp (2 * π * I * z)) atImInfty
+      (nhds 1) := by
+  have hre (z : ℍ) : Δ z / cexp (2 * π * I * z) =
+      (H₂ z / cexp (π * I * z)) ^ 2 * (H₃ z) ^ 2 * (H₄ z) ^ 2 / 256 := by
+    rw [Δ_eq_H₂_H₃_H₄, ← show cexp (π * I * z) ^ 2 = cexp (2 * π * I * z) by
+      rw [← Complex.exp_nat_mul]
+      push_cast
+      ring_nf]
+    ring
+  simp_rw [hre]
+  have hlim := (((H₂_div_exp_tendsto.pow 2).mul (H₃_tendsto_atImInfty.pow 2)).mul
+    (H₄_tendsto_atImInfty.pow 2)).div_const (256 : ℂ)
+  convert hlim using 1
+  norm_num
+
+/-- The normalized leading term of `ψS` at the cusp. -/
+lemma ψS_div_exp_tendsto :
+    Filter.Tendsto (fun z : ℍ ↦ ψS z / cexp (π * I * z)) atImInfty
+      (nhds (-10240)) := by
+  have hre (z : ℍ) : ψS z / cexp (π * I * z) =
+      (-1 / 2 : ℂ) * ((G z / cexp (2 * π * I * (3 / 2) * z)) /
+        (Δ z / cexp (2 * π * I * z))) := by
+    rw [ψS_eq_neg_one_half_smul_G_div_disc]
+    simp only [Pi.div_apply, Pi.smul_apply, smul_eq_mul]
+    have he : 2 * (π : ℂ) * I * z + π * I * z = 2 * π * I * (3 / 2) * z := by
+      ring
+    rw [← he, Complex.exp_add]
+    field_simp [Complex.exp_ne_zero]
+  simp_rw [hre]
+  have hlim := (G_vanishing_order.div normalized_discriminant_tendsto one_ne_zero).const_mul
+    (-1 / 2 : ℂ)
+  convert hlim using 1
+  norm_num
+
+/-- The leading term of `ψI` at the cusp, normalized by the polar exponential. -/
+lemma ψI_mul_exp_tendsto :
+    Filter.Tendsto (fun z : ℍ ↦ ψI z * cexp (2 * π * I * z)) atImInfty (nhds 1) := by
+  have he (z : ℍ) : cexp (2 * π * I * z) = cexp (π * I * z) ^ 2 := by
+    rw [← Complex.exp_nat_mul]
+    push_cast
+    ring_nf
+  have hExp : Filter.Tendsto (fun z : ℍ ↦ cexp (2 * π * I * z)) atImInfty (nhds 0) := by
+    apply tendsto_zero_iff_norm_tendsto_zero.mpr
+    have h := (Real.tendsto_exp_atBot.comp
+      (tendsto_id.const_mul_atTop_of_neg (show -(2 * π) < 0 from neg_lt_zero.mpr (by positivity)))).comp
+      Filter.tendsto_im_atImInfty
+    convert h using 1
+    ext z
+    simp [Complex.norm_exp, Complex.mul_re, Complex.mul_im]
+  have hre (z : ℍ) : ψI z * cexp (2 * π * I * z) =
+      128 * ((H₃ z + H₄ z) / (H₂ z / cexp (π * I * z)) ^ 2 +
+        ((H₄ z - H₂ z) / H₃ z ^ 2) * cexp (2 * π * I * z)) := by
+    rw [congrFun ψI_eq z]
+    simp only [Pi.smul_apply, nsmul_eq_mul, Pi.add_apply, Pi.sub_apply,
+      Pi.div_apply, Pi.pow_apply]
+    rw [he, div_pow, div_div_eq_mul_div]
+    ring
+  simp_rw [hre]
+  have h₁ := (H₃_tendsto_atImInfty.add H₄_tendsto_atImInfty).div
+    (H₂_div_exp_tendsto.pow 2) (by norm_num)
+  have h₂ := ((H₄_tendsto_atImInfty.sub H₂_tendsto_atImInfty).div
+    (H₃_tendsto_atImInfty.pow 2) (by norm_num)).mul hExp
+  convert (h₁.add h₂).const_mul (128 : ℂ) using 1
+  norm_num
+
+lemma ψI_mdifferentiable : MDiff ψI := by
+  have h₂ (z : ℍ) : H₂ z ≠ 0 := by
+    intro hz
+    simpa [Δ_eq_H₂_H₃_H₄, hz] using ModularForm.discriminant_ne_zero z
+  have h₃ (z : ℍ) : H₃ z ≠ 0 := by
+    intro hz
+    simpa [Δ_eq_H₂_H₃_H₄, hz] using ModularForm.discriminant_ne_zero z
+  rw [ψI_eq]
+  have h :=
+    ((H₃_MDifferentiable.add H₄_MDifferentiable).div
+      (H₂_MDifferentiable.pow 2) (fun z ↦ pow_ne_zero 2 (h₂ z))).add
+    ((H₄_MDifferentiable.sub H₂_MDifferentiable).div
+      (H₃_MDifferentiable.pow 2) (fun z ↦ pow_ne_zero 2 (h₃ z)))
+  simpa only [Nat.cast_smul_eq_nsmul] using h.const_smul ((128 : ℕ) : ℂ)
+
+lemma ψI_continuous : Continuous ψI := ψI_mdifferentiable.continuous
+
 end eq
 
 section rels
@@ -138,6 +233,33 @@ lemma ψS_slash_STS : ψS ∣[-2] (S * T * S) = -ψT := by
 lemma ψS_slash_TSTS : ψS ∣[-2] (T * S * T * S) = ψT := by
   rw [slash_mul, slash_mul, slash_mul, ψS_slash_T, neg_slash, ψS_slash_S, neg_slash, ← ψT,
     neg_slash, ψT_slash_S, neg_neg]
+
+/-- Translation by one on the upper half-plane exchanges `ψI` and `ψT`. -/
+lemma ψI_T_smul (z : ℍ) : ψI (T • z) = ψT z := by
+  rw [ψT, SL_slash_apply]
+  simp [denom, ModularGroup.coe_T]
+
+lemma ψT_T_smul (z : ℍ) : ψT (T • z) = ψI z := by
+  rw [← congrFun ψT_slash_T z, SL_slash_apply]
+  simp [denom, ModularGroup.coe_T]
+
+/-- The translation relation used on the two shifted vertical contours. -/
+lemma ψI'_add_one {z : ℂ} (hz : 0 < z.im) : ψI' (z + 1) = ψT' z := by
+  have hz' : 0 < (z + 1).im := by simpa using hz
+  rw [ψI'_def hz', ψT'_def hz, ← ψI_T_smul, modular_T_smul]
+  congr 1
+  apply UpperHalfPlane.ext
+  simp [UpperHalfPlane.coe_vadd, add_comm]
+
+lemma ψI'_sub_one {z : ℂ} (hz : 0 < z.im) : ψI' (z - 1) = ψT' z := by
+  have hz' : 0 < (z - 1).im := by simpa using hz
+  rw [ψI'_def hz', ψT'_def hz]
+  have h := ψT_T_smul (⟨z - 1, hz'⟩ : ℍ)
+  have he : T • (⟨z - 1, hz'⟩ : ℍ) = ⟨z, hz⟩ := by
+    rw [modular_T_smul]
+    apply UpperHalfPlane.ext
+    simp [UpperHalfPlane.coe_vadd, sub_eq_add_neg]
+  simpa only [he] using h.symm
 
 end rels
 
