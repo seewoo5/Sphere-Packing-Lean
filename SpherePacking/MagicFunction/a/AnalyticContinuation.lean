@@ -60,4 +60,18 @@ theorem φ₀''_sub_expPoly_isBigO_atTop :
   refine (φ₀''_I_div_mul_sq_sub_isBigO_atTop.trans h).congr_left fun t ↦ ?_
   rw [neg_sq_mul_φ₀''_neg_inv_I_mul, expPoly_φ₀'']
 
+theorem a'_sq_eq_regularized_integral {r : ℝ} (hr : 0 ≤ r) :
+    let f : ℝ → ℂ := fun t =>
+      (φ₀'' (I / (t : ℂ)) * (t : ℂ) ^ 2 -
+        ((36 / π ^ 2 * Real.exp (2 * π * t) -
+          8640 / π * t + 18144 / π ^ 2 : ℝ) : ℂ)) *
+        cexp ((-π * r ^ 2 * t : ℝ) : ℂ)
+    IntegrableOn f (Ioi (0 : ℝ)) ∧
+      MagicFunction.a.RealIntegrals.a' (r ^ 2) =
+        (I / (π : ℂ)) *
+          ((36 * (r ^ 2 - 2) * Real.sinc (π * r ^ 2 / 2 - π) ^ 2 +
+            (18144 * r ^ 2 - 8640) * Real.sinc (π * r ^ 2 / 2) ^ 2 : ℝ) : ℂ) +
+        4 * I * (Real.sin (π * r ^ 2 / 2) : ℂ) ^ 2 *
+                  (∫ t : ℝ in Ioi (0 : ℝ), f t) := by sorry
+
 end MagicFunction
