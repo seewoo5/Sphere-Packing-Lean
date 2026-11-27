@@ -262,30 +262,18 @@ section theta_non_vanishing
 open UpperHalfPlane
 
 /-- `H₂` has no zeros on the upper half-plane. -/
-theorem H₂_ne_zero (τ : ℍ) : H₂ τ ≠ 0 := by
-  intro h₂
-  apply ModularForm.discriminant_ne_zero τ
-  rw [Δ_eq_H₂_H₃_H₄]
-  simp [h₂]
+theorem H₂_ne_zero (τ : ℍ) : H₂ τ ≠ 0 := fun h₂ ↦ by
+  simpa [Δ_eq_H₂_H₃_H₄, h₂] using ModularForm.discriminant_ne_zero τ
 
 /-- `H₃` has no zeros on the upper half-plane. -/
-theorem H₃_ne_zero (τ : ℍ) : H₃ τ ≠ 0 := by
-  intro h₃
-  apply ModularForm.discriminant_ne_zero τ
-  rw [Δ_eq_H₂_H₃_H₄]
-  simp [h₃]
+theorem H₃_ne_zero (τ : ℍ) : H₃ τ ≠ 0 := fun h₃ ↦ by
+  simpa [Δ_eq_H₂_H₃_H₄, h₃] using ModularForm.discriminant_ne_zero τ
 
 /-- `H₄` has no zeros on the upper half-plane. -/
-theorem H₄_ne_zero (τ : ℍ) : H₄ τ ≠ 0 := by
-  intro h₄
-  apply ModularForm.discriminant_ne_zero τ
-  rw [Δ_eq_H₂_H₃_H₄]
-  simp [h₄]
+theorem H₄_ne_zero (τ : ℍ) : H₄ τ ≠ 0 := fun h₄ ↦ by
+  simpa [Δ_eq_H₂_H₃_H₄, h₄] using ModularForm.discriminant_ne_zero τ
 
 /-- `Θ₂` has no zeros on the upper half-plane. -/
-theorem Θ₂_ne_zero (τ : ℍ) : Θ₂ τ ≠ 0 := by
-  intro h
-  apply H₂_ne_zero τ
-  simp [H₂, h]
+theorem Θ₂_ne_zero (τ : ℍ) : Θ₂ τ ≠ 0 := fun h ↦ H₂_ne_zero τ (by simp [H₂, h])
 
 end theta_non_vanishing

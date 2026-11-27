@@ -1,6 +1,6 @@
 module
 
-public import SpherePacking.ModularForms.Eisenstein
+public import Mathlib.NumberTheory.ModularForms.Basic
 
 /-!
 # `fun_prop` Lemmas for Manifold Differentiability
@@ -10,11 +10,7 @@ public import SpherePacking.ModularForms.Eisenstein
 
 @[expose] public section
 
-open scoped Manifold UpperHalfPlane EisensteinSeries
-
-theorem E₄_MDifferentiable : MDiff E₄.toFun := E₄.holo'
-
-theorem E₆_MDifferentiable : MDiff E₆.toFun := E₆.holo'
+open scoped Manifold UpperHalfPlane
 
 /-- Modular forms are `MDifferentiable`; the generic form lets `fun_prop` handle coerced modular
 forms such as Mathlib's `ModularForm.E₄`. -/
@@ -35,6 +31,4 @@ attribute [fun_prop]
   MDifferentiable.pow
   MDifferentiable.const_smul
   mdifferentiable_const
-  E₄_MDifferentiable
-  E₆_MDifferentiable
   ModularForm.mdifferentiable

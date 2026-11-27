@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2024 The Sphere Packing Contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Sphere Packing Contributors
+-/
 module
 
 public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
@@ -5,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 
 import Mathlib.Analysis.Normed.Group.Tannery
 import SpherePacking.ForMathlib.AtImInfty
+import SpherePacking.ForMathlib.QSeriesBounds
 
 /-!
 # Limits at infinity
@@ -48,12 +54,29 @@ lemma tendsto_nat (a : ℕ → ℂ) (ha : Summable fun n : ℕ ↦ ‖a n‖ * r
     simp only [mul_im, mul_re, re_ofNat, ofReal_re, im_ofNat, ofReal_im, mul_zero,
       sub_zero, coe_re, zero_mul, add_zero, coe_im, natCast_im, natCast_re, neg_mul]
     gcongr
-    have hz2 : (2 : ℝ) ≤ 2 * z.im := by nlinarith [hz]
-    have hbase : 2 * π ≤ 2 * z.im * π := by
-      exact mul_le_mul_of_nonneg_right hz2 (by positivity)
-    have hk : (0 : ℝ) ≤ (k : ℝ) := by positivity
-    have hmul : 2 * π * (k : ℝ) ≤ (2 * z.im * π) * (k : ℝ) := by
-      exact mul_le_mul_of_nonneg_right hbase hk
-    simpa [mul_assoc, mul_comm, mul_left_comm, add_assoc, add_left_comm, add_comm] using hmul
+    linarith [mul_le_mul_of_nonneg_left hz (by positivity : (0 : ℝ) ≤ 2 * π * k)]
+
+/-- A `q`-series whose coefficients are summable against `e^{-2πm}` differs from its partial
+sum of length `N` by `O(qᴺ)` at `i∞`. -/
+lemma isBigO_tsum_sub_sum_range {a : ℕ → ℂ} (ha : Summable fun m : ℕ ↦ ‖a m‖ * rexp (-2 * π * m))
+    (N : ℕ) :
+      (fun z : ℍ ↦ ∑' m : ℕ, a m * cexp (2 * π * I * m * z) -
+        ∑ m ∈ Finset.range N, a m * cexp (2 * π * I * m * z)) =O[atImInfty]
+          fun z ↦ cexp (2 * π * I * z) ^ N := by
+  refine .of_bound (∑' m : ℕ, ‖a (m + N)‖ * rexp (-(2 * π * 1) * m)) <|
+    eventually_atImInfty.mpr ⟨1, fun z hz ↦ ?_⟩
+  have hsum : Summable fun m : ℕ ↦ a m * cexp (2 * π * I * m * z) :=
+    ha.of_norm_bounded fun m ↦ by
+      rw [norm_mul, Complex.norm_exp]
+      gcongr _ * rexp ?_
+      simp [Complex.mul_re, Complex.mul_im]
+      linarith [mul_le_mul_of_nonneg_left hz (by positivity : (0 : ℝ) ≤ 2 * π * m)]
+  rw [← hsum.sum_add_tsum_nat_add N, add_sub_cancel_left, norm_pow, Complex.norm_exp,
+    ← Real.exp_natCast_mul]
+  refine (Complex.norm_qseries_shift_le N ?_ (by simpa using hz)).trans_eq
+    (by congr 2; simp; ring)
+  refine (((summable_nat_add_iff N).mpr ha).mul_left (rexp (2 * π * N))).congr fun m ↦ ?_
+  rw [mul_left_comm, ← Real.exp_add]
+  grind
 
 end QExp

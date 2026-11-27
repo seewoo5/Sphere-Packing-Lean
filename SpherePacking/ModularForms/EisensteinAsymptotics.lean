@@ -11,6 +11,7 @@ public import SpherePacking.ModularForms.Eisenstein
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.Transform
 import SpherePacking.ForMathlib.AtImInfty
 import SpherePacking.ModularForms.E2
+import SpherePacking.ModularForms.QExpansion
 
 /-!
 # Asymptotic Behavior of Eisenstein Series
@@ -22,6 +23,9 @@ This file establishes the asymptotic behavior of Eisenstein series and of Serre 
 
 * `E₂_sub_one_isBigO_exp` : `E₂ - 1 = O(exp(-2π im z))` at `i∞`
 * `E₄_tendsto_one_atImInfty`, `E₆_tendsto_one_atImInfty` : `E₄, E₆ → 1` at `i∞`
+* `E₄_sub_isBigO`, `E₆_sub_isBigO` : `E₄ = 1 + 240q + 2160q² + O(q³)` and
+  `E₆ = 1 - 504q - 16632q² + O(q³)` at `i∞`, where `q = e^{2πiz}`
+* `E₂_mul_E₄_sub_E₆_sub_isBigO` : `E₂E₄ - E₆ = 720q + O(q²)` at `i∞`
 * `serreDerivative_tendsto_of_tendsto` : the limit of `∂ₖ f` at `i∞` from that of `f`
 -/
 
@@ -31,7 +35,7 @@ open UpperHalfPlane hiding I
 open ModularForm hiding E₄ E₆
 open Real Complex CongruenceSubgroup Filter SlashInvariantFormClass ModularFormClass
 
-open scoped Manifold MatrixGroups
+open scoped Manifold MatrixGroups ArithmeticFunction.sigma
 open Derivative
 
 noncomputable section
@@ -128,3 +132,48 @@ lemma summable_pow_shift (k : ℕ) :
   simp_rw [h_eq]
   exact ((h.comp_injective Nat.succ_injective).congr fun i => by
     simp [Function.comp_apply, Nat.succ_eq_add_one]).mul_left _
+
+/-- The coefficients `mʲ σₖ(m)` are summable against `e^{-2πm}`. -/
+lemma summable_pow_mul_sigma (j k : ℕ) :
+    Summable fun m : ℕ ↦ ‖(m : ℂ) ^ j * (σ k m : ℂ)‖ * rexp (-2 * π * m) := by
+  refine .of_nonneg_of_le (fun _ ↦ by positivity) (fun m ↦ ?_) (summable_pow_shift (j + k + 1))
+  rw [norm_mul, norm_pow, Complex.norm_natCast, Complex.norm_natCast, add_assoc, pow_add]
+  gcongr
+  · linarith
+  · calc _ ≤ (m : ℝ) ^ (k + 1) := mod_cast ArithmeticFunction.sigma_le_pow_succ k m
+      _ ≤ _ := by gcongr; linarith
+
+/-! ## Low-order `q`-expansions of `E₄`, `E₆` and `E₂E₄ - E₆` -/
+
+/-- `E₄ = 1 + 240 q + 2160 q² + O(q³)` at `i∞`. -/
+lemma E₄_sub_isBigO : (fun z : ℍ ↦ E₄ z - (1 + 240 * cexp (2 * π * I * z) +
+    2160 * cexp (2 * π * I * z) ^ 2)) =O[atImInfty] fun z ↦ cexp (2 * π * I * z) ^ 3 := by
+  refine ((QExp.isBigO_tsum_sub_sum_range (a := fun m ↦ σ 3 m)
+    (by simpa using summable_pow_mul_sigma 0 3) 3).const_mul_left 240).congr_left fun z ↦ ?_
+  rw [E₄_sigma_qexp, tsum_pnat_eq_tsum_of_eq_zero
+    (f := fun n : ℕ ↦ σ 3 n * cexp (2 * π * I * n * z)) (by simp)]
+  simp [Finset.sum_range_succ, ← Complex.exp_natCast_mul, show σ 3 2 = 9 by decide, mul_comm,
+    mul_left_comm]
+  ring
+
+/-- `E₆ = 1 - 504 q - 16632 q² + O(q³)` at `i∞`. -/
+lemma E₆_sub_isBigO : (fun z : ℍ ↦ E₆ z - (1 - 504 * cexp (2 * π * I * z) -
+    16632 * cexp (2 * π * I * z) ^ 2)) =O[atImInfty] fun z ↦ cexp (2 * π * I * z) ^ 3 := by
+  refine ((QExp.isBigO_tsum_sub_sum_range (a := fun m ↦ (σ 5 m : ℂ))
+    (by simpa using summable_pow_mul_sigma 0 5) 3).const_mul_left
+    (-504)).congr_left fun z ↦ ?_
+  rw [E₆_sigma_qexp, tsum_pnat_eq_tsum_of_eq_zero
+    (f := fun n : ℕ ↦ σ 5 n * cexp (2 * π * I * n * z)) (by simp)]
+  simp [Finset.sum_range_succ, ← Complex.exp_natCast_mul, show σ 5 2 = 33 by decide, mul_comm,
+    mul_left_comm]
+  ring
+
+/-- `E₂ E₄ - E₆ = 720 q + O(q²)` at `i∞`. -/
+lemma E₂_mul_E₄_sub_E₆_sub_isBigO : (fun z : ℍ ↦ E₂ z * E₄ z - E₆ z - 720 * cexp (2 * π * I * z))
+    =O[atImInfty] fun z ↦ cexp (2 * π * I * z) ^ 2 := by
+  refine ((QExp.isBigO_tsum_sub_sum_range (a := fun m ↦ m * σ 3 m)
+    (by simpa using summable_pow_mul_sigma 1 3) 2).const_mul_left 720).congr_left fun z ↦ ?_
+  rw [E₂_mul_E₄_sub_E₆_qexp, tsum_pnat_eq_tsum_of_eq_zero
+    (f := fun n : ℕ ↦ n * σ 3 n * cexp (2 * π * I * n * z)) (by simp)]
+  simp [Finset.sum_range_succ, mul_comm, mul_left_comm]
+  ring

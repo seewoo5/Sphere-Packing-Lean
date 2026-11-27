@@ -6,12 +6,16 @@ Authors: Sphere Packing Contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
+public import Mathlib.NumberTheory.ModularForms.Derivative
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Basic
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.Defs
 public import Mathlib.NumberTheory.ModularForms.QExpansion
+public import SpherePacking.ForMathlib.MDifferentiableFunProp
 public import SpherePacking.ModularForms.ResToImagAxis
 
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.Summable
+import Mathlib.NumberTheory.ModularForms.RamanujanFormula
+import SpherePacking.ModularForms.Derivative
 import SpherePacking.ModularForms.E2
 import SpherePacking.ModularForms.exp_lems
 import SpherePacking.ModularForms.tsumderivWithin
@@ -30,13 +34,19 @@ and `E₆` needed by the project (the quotients `φ₀`, `φ₂'`, `φ₄'` by `
   (`240 · σ₃` for `E₄`).
 * `Ek_ne_zero`, `E4_ne_zero`, `E6_ne_zero`: non-vanishing, via mathlib's
   `EisensteinSeries.E_ne_zero`.
-* `E₂_sigma_qexp`, `E₄_sigma_qexp`: the `q`-expansions `E₂ = 1 - 24 ∑ σ₁(n) qⁿ` and
-  `E₄ = 1 + 240 ∑ σ₃(n) qⁿ` written with `cexp (2πinz)`, together with the summability and
-  derivative bounds `sigma_qexp_summable_generic`, `sigma_qexp_deriv_bound_generic` for the
-  `σ`-twisted `q`-series that appear when differentiating them termwise.
+* `E₄_MDifferentiable`, `E₆_MDifferentiable`: holomorphy of `E₄` and `E₆`, registered for
+  `fun_prop`.
+* `E₂_sigma_qexp`, `E₄_sigma_qexp`, `E₆_sigma_qexp`: the `q`-expansions `E₂ = 1 - 24 ∑ σ₁(n) qⁿ`,
+  `E₄ = 1 + 240 ∑ σ₃(n) qⁿ` and `E₆ = 1 - 504 ∑ σ₅(n) qⁿ` written with `cexp (2πinz)`, together
+  with the summability and derivative bounds `sigma_qexp_summable_generic`,
+  `sigma_qexp_deriv_bound_generic` for the `σ`-twisted `q`-series that appear when
+  differentiating them termwise.
+* `DE₄_qexp`, `E₂_mul_E₄_sub_E₆_qexp`: the `q`-expansion `D E₄ = 240 ∑ n σ₃(n) qⁿ` and, via
+  Ramanujan's formula `D E₄ = (E₂ E₄ - E₆) / 3`, `E₂ E₄ - E₆ = 720 ∑ n σ₃(n) qⁿ`.
 * `E_even_imag_axis_real`, `E₂_imag_axis_real`, `E₄_imag_axis_real`, `E₆_imag_axis_real`:
   realness on the positive imaginary axis; `sigma_qexp_tsum_re_pos`: positivity of the
-  differentiated `σ_k` `q`-series there.
+  differentiated `σ_k` `q`-series there; `serreDerivative_real_of_real`: the Serre derivative
+  `∂ₖ = D - k/12 E₂` preserves realness on the imaginary axis.
 
 Boundedness of `E₂` at `i∞` is now mathlib's `EisensteinSeries.isBoundedAtImInfty_E2`.
 -/
@@ -46,7 +56,7 @@ Boundedness of `E₂` at `i∞` is now mathlib's `EisensteinSeries.isBoundedAtIm
 open ModularForm hiding E₄ E₆
 open UpperHalfPlane Complex
 
-open scoped Real Nat ArithmeticFunction.sigma
+open scoped Real Nat ArithmeticFunction.sigma Manifold Derivative
 
 noncomputable section
 
@@ -62,6 +72,12 @@ def E₄ := E 4 (by norm_num)
 
 /-- The normalised Eisenstein series of weight `6` and level one, with constant term `1`. -/
 def E₆ := E 6 (by norm_num)
+
+@[fun_prop]
+theorem E₄_MDifferentiable : MDiff E₄.toFun := E₄.holo'
+
+@[fun_prop]
+theorem E₆_MDifferentiable : MDiff E₆.toFun := E₆.holo'
 
 /-- E₄ is 1-periodic: E₄(z + 1) = E₄(z), as a modular form for Γ(1). -/
 lemma E₄_periodic (z : ℍ) : E₄ ((1 : ℝ) +ᵥ z) = E₄ z := by
@@ -148,7 +164,7 @@ lemma sigma_qexp_summable_generic (a b : ℕ) (z : ℍ) :
 lemma sigma_qexp_deriv_bound_generic (k : ℕ) :
     ∀ K : Set ℂ, K ⊆ {w : ℂ | 0 < w.im} → IsCompact K →
       ∃ u : ℕ+ → ℝ, Summable u ∧ ∀ (n : ℕ+) (z : K),
-        ‖(σ k n : ℂ) * (2 * π * Complex.I * n) * cexp (2 * π * Complex.I * n * z.1)‖ ≤ u n := by
+        ‖(σ k n : ℂ) * (2 * π * Complex.I * n) * cexp (2 * π * Complex.I * n * z.val)‖ ≤ u n := by
   intro K hK hKc
   obtain ⟨u₀, hu₀_sum, hu₀_bound⟩ := iter_deriv_comp_bound3 K hK hKc (k + 2)
   refine ⟨fun n ↦ u₀ n, hu₀_sum.subtype _, fun n z ↦ le_trans ?_ (hu₀_bound n z)⟩
@@ -168,7 +184,29 @@ lemma E₂_sigma_qexp (z : ℍ) :
 lemma E₄_sigma_qexp (z : ℍ) :
     E₄ z = 1 + 240 * ∑' (n : ℕ+), (σ 3 n : ℂ) * cexp (2 * π * Complex.I * n * z) := by
   refine (EisensteinSeries.q_expansion_bernoulli (by norm_num : 3 ≤ 4) (by decide) z).trans ?_
-  norm_num [bernoulli, bernoulli'_four, ← Complex.exp_natCast_mul, mul_comm, mul_assoc, mul_left_comm]
+  norm_num [bernoulli, bernoulli'_four, ← Complex.exp_natCast_mul, mul_comm, mul_assoc,
+    mul_left_comm]
+
+/-- `E₆ = 1 - 504 ∑' n : ℕ+, σ₅ n qⁿ`. -/
+lemma E₆_sigma_qexp (z : ℍ) :
+    E₆ z = 1 - 504 * ∑' (n : ℕ+), (σ 5 n : ℂ) * cexp (2 * π * Complex.I * n * z) := by
+  refine (EisensteinSeries.q_expansion_bernoulli (by norm_num : 3 ≤ 6) (by decide) z).trans ?_
+  norm_num [bernoulli, bernoulli'_six, ← Complex.exp_natCast_mul, mul_comm, mul_assoc,
+    mul_left_comm]
+
+/-- `D E₄ = 240 ∑' n : ℕ+, n σ₃ n qⁿ`, by differentiating the `q`-expansion of `E₄` termwise. -/
+theorem DE₄_qexp (z : ℍ) :
+    D E₄.toFun z = 240 * ∑' (n : ℕ+), (n : ℂ) * (σ 3 n : ℂ) * cexp (2 * π * Complex.I * n * z) :=
+  D_qexp_const_add_smul (by norm_num) E₄.holo' E₄_sigma_qexp
+    (fun w ↦ by simpa using sigma_qexp_summable_generic 0 3 w)
+    (sigma_qexp_deriv_bound_generic 3) z
+
+/-- `E₂ E₄ - E₆ = 720 ∑' n : ℕ+, n σ₃ n qⁿ` (Ramanujan's formula for `D E₄`). -/
+lemma E₂_mul_E₄_sub_E₆_qexp (z : ℍ) : E₂ z * E₄ z - E₆ z =
+      720 * ∑' (n : ℕ+), (n : ℂ) * (σ 3 n : ℂ) * cexp (2 * π * Complex.I * n * z) := by
+  have h : D E₄.toFun z = 3⁻¹ * (E₂ z * E₄ z - E₆ z) :=
+    congrFun Derivative.normalizedDerivOfComplex_E₄ z
+  linear_combination -3 * h + 3 * DE₄_qexp z
 
 /-! ## Realness on the imaginary axis -/
 
@@ -305,3 +343,16 @@ theorem E₂_imag_axis_real : ResToImagAxis.Real E₂ := by
     simp [hterm_im]
   -- Step 4: 24 * sum is real, so -(24 * sum).im = 0
   simp [Complex.mul_im, hsum_im]
+
+open Derivative in
+/-- If F is real on the imaginary axis and MDifferentiable, then the Serre derivative
+(of real weight) is also real on the imaginary axis. -/
+@[fun_prop]
+theorem serreDerivative_real_of_real {F : ℍ → ℂ} {k : ℝ} (hF_real : ResToImagAxis.Real F)
+    (hF_diff : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) F) : ResToImagAxis.Real (serreDerivative k F) := by
+  have h : ResToImagAxis.Real (D F - ((k * 12⁻¹ : ℝ) • (E₂ * F))) := by fun_prop
+  convert h using 1
+  ext z
+  simp only [serreDerivative_apply, Pi.sub_apply, Pi.smul_apply, Pi.mul_apply, real_smul,
+    ofReal_mul, ofReal_inv, ofReal_ofNat, sub_right_inj]
+  ring

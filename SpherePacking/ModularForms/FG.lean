@@ -153,13 +153,6 @@ theorem MLDE_G :
     Δ_eq_H₂_H₃_H₄, ← jacobi_identity]
   ring
 
-/-- `D E₄ = 240 ∑' n : ℕ+, n σ₃ n qⁿ`, by differentiating the `q`-expansion of `E₄` termwise. -/
-theorem DE₄_qexp (z : ℍ) :
-    D E₄.toFun z = 240 * ∑' (n : ℕ+), (n : ℂ) * (σ 3 n : ℂ) * cexp (2 * π * I * n * z) :=
-  D_qexp_const_add_smul (by norm_num) E₄.holo' E₄_sigma_qexp
-    (fun w ↦ by simpa using sigma_qexp_summable_generic 0 3 w)
-    (sigma_qexp_deriv_bound_generic 3) z
-
 /-- `negDE₂ = 24 ∑' n : ℕ+, n σ₁ n qⁿ`, by differentiating the `q`-expansion of `E₂` termwise. -/
 theorem negDE₂_qexp (z : ℍ) :
     negDE₂ z = 24 * ∑' (n : ℕ+), (n : ℂ) * (σ 1 n : ℂ) * cexp (2 * π * I * n * z) := by
@@ -301,16 +294,12 @@ private lemma eventually_ne_zero_of_tendsto_div {f g : ℍ → ℂ} {c : ℂ} (h
 /-- `(E₂E₄ - E₆)(z) / exp(2πiz) → 720` as `im(z) → ∞`. -/
 theorem E₂E₄_sub_E₆_div_q_tendsto :
     Tendsto (fun z : ℍ ↦ (E₂ z * E₄ z - E₆ z) / cexp (2 * π * I * z)) atImInfty (nhds 720) := by
-  have h_DE₄ (z : ℍ) :
-      E₂ z * E₄ z - E₆ z = 720 * ∑' (n : ℕ+), n * (σ 3 n) * cexp (2 * π * Complex.I * n * z) := by
-    have h : D E₄.toFun z = 3⁻¹ * (E₂ z * E₄ z - E₆ z) := congrFun normalizedDerivOfComplex_E₄ z
-    linear_combination -3 * h + 3 * DE₄_qexp z
   have h_eq : ∀ z : ℍ, (E₂ z * E₄ z - E₆ z) / cexp (2 * π * I * z) =
       720 * ∑' m : ℕ, (↑(m + 1) * ↑(σ 3 (m + 1)) : ℂ) * cexp (2 * π * I * z * m) := fun z ↦ by
-    rw [h_DE₄ z, tsum_pnat_eq_tsum_succ (f := fun n : ℕ ↦ (n * σ 3 n *
+    rw [E₂_mul_E₄_sub_E₆_qexp z, tsum_pnat_eq_tsum_succ (f := fun n : ℕ ↦ (n * σ 3 n *
       cexp (2 * π * I * n * z) : ℂ)), mul_div_assoc, ← tsum_div_const]
     exact congrArg _ (tsum_congr fun m ↦ by push_cast [mul_div_assoc, ← Complex.exp_sub]; ring_nf)
-  have hbound : ∀ m : ℕ, ‖(↑(m + 1) * ↑(σ 3 (m + 1)) : ℂ)‖ ≤ ((m + 1 : ℕ) : ℝ) ^ 5 := fun m ↦ by
+  have hbound (m : ℕ) : ‖(↑(m + 1) * ↑(σ 3 (m + 1)) : ℂ)‖ ≤ ((m + 1 : ℕ) : ℝ) ^ 5 := by
     exact_mod_cast (Nat.mul_le_mul_left _ (ArithmeticFunction.sigma_le_pow_succ 3 _)).trans_eq
       (by ring)
   simpa [h_eq] using (qexp_tendsto_of_poly_bound hbound).const_mul (720 : ℂ)

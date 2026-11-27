@@ -316,18 +316,6 @@ theorem D_real_of_real {F : ℍ → ℂ} (hF_real : ResToImagAxis.Real F)
   exact (mul_eq_zero.mp (h_im_deriv ▸ h_im_eq).symm).resolve_left
     (mul_ne_zero (by norm_num) Real.pi_ne_zero)
 
-/-- If F is real on the imaginary axis and MDifferentiable, then the Serre derivative
-(of real weight) is also real on the imaginary axis. -/
-@[fun_prop]
-theorem serreDerivative_real_of_real {F : ℍ → ℂ} {k : ℝ} (hF_real : ResToImagAxis.Real F)
-    (hF_diff : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) F) : ResToImagAxis.Real (serreDerivative k F) := by
-  have h : ResToImagAxis.Real (D F - ((k * 12⁻¹ : ℝ) • (E₂ * F))) := by fun_prop
-  convert h using 1
-  ext z
-  simp only [serreDerivative_apply, Pi.sub_apply, Pi.smul_apply, Pi.mul_apply, real_smul,
-    ofReal_mul, ofReal_inv, ofReal_ofNat, sub_right_inj]
-  ring
-
 /-- The real part of F.resToImagAxis has derivative -2π * ((D F).resToImagAxis t).re at t. -/
 lemma hasDerivAt_resToImagAxis_re {F : ℍ → ℂ} (hdiff : MDiff F)
     {t : ℝ} (ht : 0 < t) :
