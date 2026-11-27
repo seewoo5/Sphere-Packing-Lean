@@ -81,12 +81,14 @@ theorem analyticOnNhd_integral_sub_expPoly (hC : 0 < C)
       (ψ (I * t) - expPoly n a b t) * cexp (-π * s * t)) {s | -C / π < s.re} := by
   sorry
 
-/-- `sin(πs/2)^2 * ∫₀^∞ ψ(it) e^{-πst} dt` is holomorphic on `Re s > -C/π`. -/
-theorem analyticOnNhd_sin_sq_mul_integral (hC : 0 < C)
+/-- `sin(πs/2)^2 * ∫₀^∞ ψ(it) e^{-πst} dt`, which is defined for `Re s > 2n`, extends to a
+holomorphic function on `Re s > -C/π`. The extension is unique by the identity theorem. -/
+theorem exists_analyticOnNhd_eqOn_sin_sq_mul_integral (hC : 0 < C)
     (hloc : LocallyIntegrableOn (fun t : ℝ ↦ ψ (I * t)) (Ici 0))
     (hexp : (fun t : ℝ ↦ ψ (I * t) - expPoly n a b t) =O[atTop] fun t ↦ rexp (-C * t)) :
-      AnalyticOnNhd ℂ (fun s : ℂ ↦ (sin (π * s / 2)) ^ 2 * ∫ t in Ioi (0 : ℝ),
-        ψ (I * t) * cexp (-π * s * t)) {s | -C / π < s.re} := by
+    ∃ F : ℂ → ℂ, AnalyticOnNhd ℂ F {s | -C / π < s.re} ∧
+      EqOn F (fun s : ℂ ↦ (sin (π * s / 2)) ^ 2 * ∫ t in Ioi (0 : ℝ),
+        ψ (I * t) * cexp (-π * s * t)) {s | 2 * n < s.re} := by
   sorry
 
 end MagicFunction.DoubleZeroes
