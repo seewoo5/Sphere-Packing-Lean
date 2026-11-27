@@ -66,4 +66,9 @@ theorem ψI'_I_mul_sub_expPoly_isBigO_atTop :
       fun t ↦ rexp (-π * t) :=
   ψI'_I_mul_sub_isBigO_atTop.congr_left fun t ↦ by rw [expPoly_ψI']
 
+/-- `b'Complex` is holomorphic on `Re s > -1`. -/
+theorem analyticOnNhd_b'Complex :
+    AnalyticOnNhd ℂ b.ComplexIntegrals.b'Complex {s | -1 < s.re} := by
+  sorry
+
 end MagicFunction

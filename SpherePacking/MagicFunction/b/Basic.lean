@@ -19,11 +19,12 @@ This file rewrites the integrals `Jⱼ'` defining Viazovska's function `b` (see
 local notation "V" => EuclideanSpace ℝ (Fin 8)
 
 open Set Complex Real MagicFunction.Parametrisations MagicFunction.b.ComplexIntegrands
-  MagicFunction.b.RealIntegrands MagicFunction.b.RealIntegrals intervalIntegral
+  MagicFunction.b.RealIntegrands MagicFunction.b.ComplexIntegrals MagicFunction.b.RealIntegrals
+  intervalIntegral
 
 namespace MagicFunction.b.ComplexIntegrands
 
-variable (s : ℝ)
+variable (s : ℂ)
 
 -- We write some API that allows us to express the `(Ψᵢ' s)` as functions when needed.
 
@@ -51,7 +52,7 @@ namespace MagicFunction.b.RealIntegrands
 
 open MagicFunction.b.ComplexIntegrands
 
-variable (s : ℝ)
+variable (s : ℂ)
 
 -- We write some API that allows us to express the `(Ψᵢ s)` as functions when needed.
 
@@ -75,6 +76,33 @@ lemma Ψ₆_def : Ψ₆ s = fun t ↦ I * Ψ₆' s (z₆' t) :=
 
 end MagicFunction.b.RealIntegrands
 
+namespace MagicFunction.b.RealIntegrals
+
+-- The real-variable integrals are the restrictions of the complex-variable ones.
+
+lemma J₁'Complex_ofReal (s : ℝ) : J₁'Complex s = J₁' s :=
+  rfl
+
+lemma J₂'Complex_ofReal (s : ℝ) : J₂'Complex s = J₂' s :=
+  rfl
+
+lemma J₃'Complex_ofReal (s : ℝ) : J₃'Complex s = J₃' s :=
+  rfl
+
+lemma J₄'Complex_ofReal (s : ℝ) : J₄'Complex s = J₄' s :=
+  rfl
+
+lemma J₅'Complex_ofReal (s : ℝ) : J₅'Complex s = J₅' s :=
+  rfl
+
+lemma J₆'Complex_ofReal (s : ℝ) : J₆'Complex s = J₆' s :=
+  rfl
+
+lemma b'Complex_ofReal (s : ℝ) : b'Complex s = b' s :=
+  rfl
+
+end MagicFunction.b.RealIntegrals
+
 namespace MagicFunction.b.RadialFunctions
 
 lemma b_eq (x : V) : b x = J₁ x + J₂ x + J₃ x + J₄ x + J₅ x + J₆ x := rfl
@@ -90,7 +118,7 @@ private lemma aux_I :  I ≠ 0 := by norm_num
 
 lemma J₁'_eq₀ (s : ℝ) : J₁' s = ∫ t in (0 : ℝ)..1,
     I * ψS' (-1 / ((z₁' t) + (1 : ℂ))) * ((z₁' t) + (1 : ℂ)) ^ 2 * cexp (π * I * s * (z₁' t)) := by
-  rw [J₁', Ψ₁_def s, Ψ₁'_def s]
+  rw [J₁', J₁'Complex, Ψ₁_def, Ψ₁'_def]
   apply integral_congr_ae
   apply MeasureTheory.ae_of_all
   intro t ht
@@ -100,7 +128,7 @@ lemma J₁'_eq₀ (s : ℝ) : J₁' s = ∫ t in (0 : ℝ)..1,
 
 lemma J₂'_eq₀ (s : ℝ) : J₂' s = ∫ t in (0 : ℝ)..1,
     ψS' (-1 / ((z₂' t) + (1 : ℂ))) * ((z₂' t) + (1 : ℂ)) ^ 2 * cexp (π * I * s * (z₂' t)) := by
-  rw [J₂', Ψ₂_def s, Ψ₂'_def s]
+  rw [J₂', J₂'Complex, Ψ₂_def, Ψ₂'_def]
   apply integral_congr
   intro t ht
   rw [uIcc_of_le zero_le_one] at ht
@@ -108,7 +136,7 @@ lemma J₂'_eq₀ (s : ℝ) : J₂' s = ∫ t in (0 : ℝ)..1,
 
 lemma J₃'_eq₀ (s : ℝ) : J₃' s = ∫ t in (0 : ℝ)..1,
     I * ψS' (-1 / ((z₃' t) + (1 : ℂ))) * ((z₃' t) + (1 : ℂ)) ^ 2 * cexp (π * I * s * (z₃' t)) := by
-  rw [J₃', Ψ₃_def s, Ψ₃'_def s]
+  rw [J₃', J₃'Complex, Ψ₃_def, Ψ₃'_def]
   apply integral_congr_ae
   apply MeasureTheory.ae_of_all
   intro t ht
@@ -118,7 +146,7 @@ lemma J₃'_eq₀ (s : ℝ) : J₃' s = ∫ t in (0 : ℝ)..1,
 
 lemma J₄'_eq₀ (s : ℝ) : J₄' s = ∫ t in (0 : ℝ)..1,
     -1 * ψS' (-1 / ((z₄' t) + (1 : ℂ))) * ((z₄' t) + (1 : ℂ)) ^ 2 * cexp (π * I * s * (z₄' t)) := by
-  rw [J₄', Ψ₄_def s, Ψ₄'_def s]
+  rw [J₄', J₄'Complex, Ψ₄_def, Ψ₄'_def]
   apply integral_congr
   intro t ht
   rw [uIcc_of_le zero_le_one] at ht
@@ -127,7 +155,7 @@ lemma J₄'_eq₀ (s : ℝ) : J₄' s = ∫ t in (0 : ℝ)..1,
 
 lemma J₅'_eq₀ (s : ℝ) : J₅' s = -2 * ∫ t in (0 : ℝ)..1,
     I * ψS' (-1 / (z₅' t)) * (z₅' t) ^ 2 * cexp (π * I * s * (z₅' t)) := by
-  rw [J₅', Ψ₅_def s, Ψ₅'_def s]
+  rw [J₅', J₅'Complex, Ψ₅_def, Ψ₅'_def]
   congr 1
   apply integral_congr_ae
   apply MeasureTheory.ae_of_all
@@ -138,7 +166,7 @@ lemma J₅'_eq₀ (s : ℝ) : J₅' s = -2 * ∫ t in (0 : ℝ)..1,
 
 lemma J₆'_eq₀ (s : ℝ) : J₆' s = -2 * ∫ t in Ici (1 : ℝ),
     I * ψS' (z₆' t) * cexp (π * I * s * (z₆' t)) := by
-  rw [J₆', Ψ₆_def s, Ψ₆'_def s]
+  rw [J₆', J₆'Complex, Ψ₆_def, Ψ₆'_def]
   ring_nf
 
 end Eq₀
